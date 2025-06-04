@@ -1,0 +1,45 @@
+[
+    {
+        "id": 0,
+        "nombre": "TSU",
+        "ciclo_escolar": "2025-A",
+        "salon": "14",
+        "alumnos": [
+            {
+                "id": "23170140",
+                "nombre": "Saul",
+                "apellido": "Pérez",
+                "edad": 18,
+                "matricula": "23170140",
+                "promedio": 8.5,
+                "materias": []
+            },
+            {
+                "id": "23170141",
+                "nombre": "Azael",
+                "apellido": "González",
+                "edad": 19,
+                "matricula": "23170141",
+                "promedio": 9.2,
+                "materias": []
+            },
+            {
+                "id": "23170142",
+                "nombre": "Jesús",
+                "apellido": "Ramírez",
+                "edad": 18,
+                "matricula": "23170142",
+                "promedio": 7.8,
+                "materias": []
+            }
+        ],
+        "maestro": {
+            "id": "C98765",
+            "nombre": "Daniel",
+            "apellido": "Garcia",
+            "cedula": "C98765",
+            "especialidad": "Programador",
+            "años_experiencia": 10
+        }
+    }
+]
