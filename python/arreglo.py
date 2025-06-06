@@ -36,13 +36,15 @@ class Arreglo:
         for item in self.items:
                 diccionario = item.__dict__.copy()
                 diccionario.pop('es_arreglo', None)
+                diccionario.pop('items', None)
 
                 if 'maestro' in diccionario and diccionario['maestro'] is not None:
                     diccionario['maestro'] = diccionario['maestro'].convADiccionario()
 
                 if 'alumnos' in diccionario:
+                    print(diccionario['alumnos'])
                     diccionario['alumnos'] = [
-                        alumno.convADiccionario() for alumno in item.alumnos.items
+                        alumno.convADiccionario() for alumno in diccionario['alumnos'].items
                     ]
 
                 arreglo_convertido.append(diccionario)
@@ -63,3 +65,6 @@ class Arreglo:
         with open(ruta_archivo, 'r', encoding='utf-8') as f:
             datos = json.load(f)
         return self.instanciarDesdeJson(datos)
+
+    def instanciarDesdeJson(self, datos):
+        pass

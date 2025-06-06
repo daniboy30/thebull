@@ -7,7 +7,7 @@ class Alumno(Arreglo):
             super().__init__()
             self.es_arreglo = True
         else:
-            self.id = matricula
+            self.id = matricula 
             self.nombre = nombre
             self.apellido = apellido
             self.edad = edad

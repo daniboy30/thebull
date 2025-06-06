@@ -5,18 +5,22 @@ from arreglo import Arreglo
 from pprint import pprint
 
 class Grupo(Arreglo):
-    def __init__(self, nombre: str = None, ciclo_escolar: str = None, salon: str = None, maestro: Maestro = None):
-        self.id = 0
-        self.nombre = nombre
-        self.ciclo_escolar = ciclo_escolar
-        self.salon = salon
-        self.alumnos = Alumno()
-        self.maestro = maestro
-        self.es_arreglo = False
+    _id_counter = 1
 
+    def __init__(self, nombre: str = None, ciclo_escolar: str = None, salon: str = None, maestro: Maestro = None):
         if nombre is None and ciclo_escolar is None and salon is None and maestro is None:
             super().__init__()
             self.es_arreglo = True
+        else:
+            self.id = Grupo._id_counter
+            Grupo._id_counter += 1
+            self.nombre = nombre
+            self.ciclo_escolar = ciclo_escolar
+            self.salon = salon
+            self.maestro = maestro
+            self.alumnos = Alumno()
+            self.es_
+            self.es_arreglo = False
 
     def convADiccionario(self):
         if self.es_arreglo:
@@ -41,7 +45,7 @@ class Grupo(Arreglo):
         }
 
     def mostrar_diccionario(self):
-        print(self.convADiccionario())
+        print(json.dumps(self.convADiccionario(), indent=4, ensure_ascii=False))
 
     def __str__(self):
         if self.es_arreglo:
@@ -56,105 +60,60 @@ class Grupo(Arreglo):
         with open(nombre_archivo, 'r', encoding='utf-8') as archivo:
             return json.load(archivo)"""
 
-    def crear_maestro(self, data):
-        if not data:
-            return None
-        return Maestro(
-            nombre=data.get("nombre"),
-            apellido=data.get("apellido"),
-            cedula=data.get("cedula"),
-            especialidad=data.get("especialidad"),
-            años_experiencia=data.get("años_experiencia")
-        )
-
-    def crear_alumnos(self, lista):
-        alumnos = Alumno()
-        alumnos.crear_desde_dict(lista)
-        """
-        for a in lista:
-            nuevo = Alumno(
-                nombre=a.get("nombre"),
-                apellido=a.get("apellido"),
-                edad=a.get("edad"),
-                matricula=a.get("matricula"),
-                promedio=a.get("promedio"),
-                materias=a.get("materias", [])
-            )
-            alumnos.agregar(nuevo)
-        """
-        return alumnos
-
-    def crear_desde_dict(self, data):
-        grupo = Grupo(
-            nombre=data.get("nombre"),
-            ciclo_escolar=data.get("ciclo_escolar"),
-            salon=data.get("salon"),
-            maestro=self.crear_maestro(data.get("maestro"))
-        )
-        grupo.alumnos = self.crear_alumnos(data.get("alumnos", []))
-        grupo.id = data.get("id", 0)
-        return grupo
 
     def es_grupo(self, dic):
         campos = {"id", "nombre", "ciclo_escolar", "salon", "maestro", "alumnos"}
         return campos.issubset(dic.keys())
 
-
     def instanciarDesdeJson(self, datos):
-        if isinstance(datos, str):
-            # Si es un archivo, primero lo abrimos
-            try:
-                with open(datos, 'r', encoding='utf-8') as archivo:
-                    datos = json.load(archivo)
-            except Exception as e:
-                print(f"Error al leer archivo JSON: {e}")
-                return False
-
         if isinstance(datos, list):
-            for item in datos:
-                if self.es_grupo(item):
-                    grupo = self.crear_desde_dict(item)
-                    self.agregar(grupo)
+            for d in datos:
+                grupo = Grupo()  
+                grupo.id = d.get("id", 0)
+                grupo.nombre = d.get("nombre")
+                grupo.ciclo_escolar = d.get("ciclo_escolar")
+                grupo.salon = d.get("salon")
+                    
+                if "maestro" in d and d["maestro"]:
+                    grupo.maestro = Maestro(**d["maestro"])
                 else:
-                    return False
-        elif isinstance(datos, dict):
-            if self.es_grupo(datos):
-                grupo = self.crear_desde_dict(datos)
+                    grupo.maestro = None
+
+                grupo.alumnos = Alumno()
+                if "alumnos" in d and d["alumnos"]:
+                    grupo.alumnos.instanciarDesdeJson(d["alumnos"])
+                    """
+                    for alumno_dict in d["alumnos"]:
+                        alumno_data = alumno_dict.copy()
+                        alumno_data.pop('id', None)
+                        alumno = Alumno(**alumno_data)
+                        grupo.alumnos.agregar(alumno)
+                    """
                 self.agregar(grupo)
+            return True
+        elif isinstance(datos, dict):
+            self.id = datos.get("id", 0)
+            self.nombre = datos.get("nombre")
+            self.ciclo_escolar = datos.get("ciclo_escolar")
+            self.salon = datos.get("salon")
+
+            
+            if "maestro" in datos and datos["maestro"]:
+                self.maestro = Maestro(**datos["maestro"])
             else:
-                return False
-        else:
-            return False
-        return True
+                self.maestro = None
 
+            
+            self.alumnos = Alumno()
+            if "alumnos" in datos and datos["alumnos"]:
+                for alumno_dict in datos["alumnos"]:
+                    alumno = Alumno(**alumno_dict)
+                    self.alumnos.agregar(alumno)
+            return True
+        return False
 
-        
 
 if __name__ == "__main__":
-    alumno1 = Alumno(nombre="Saul", apellido="Pérez", edad=18, matricula="23170140", promedio=8.5)
-    alumno2 = Alumno(nombre="Azael", apellido="González", edad=19, matricula="23170141", promedio=9.2)
-    alumno3 = Alumno(nombre="Jesús", apellido="Ramírez", edad=18, matricula="23170142", promedio=7.8)
-
-    maestro1 = Maestro(nombre="Daniel", apellido="Garcia", cedula="C98765", especialidad="Programador", años_experiencia=10)
-
-    grupo_matematicas = Grupo(nombre="TSU", ciclo_escolar="2025-A", salon="14", maestro=maestro1)
-    grupo_matematicas.alumnos.agregar(alumno1)
-    grupo_matematicas.alumnos.agregar(alumno2)
-    grupo_matematicas.alumnos.agregar(alumno3)
-
-    grupos = Grupo()
-    grupos.agregar(grupo_matematicas)
-
-    print(grupo_matematicas)
-    grupo_matematicas.mostrar_diccionario()
-    print(grupos)
-
-    grupos.crearJson("grupos.json")
-
-    print("==============================================================")
     grupos_desde_json = Grupo()
-    grupos_desde_json.instanciarDesdeJson("grupos.json")
-    print(grupos_desde_json)
+    grupos_desde_json.leerJson('grupos.json')
     grupos_desde_json.mostrar_diccionario()
-
-    
