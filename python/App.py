@@ -1,21 +1,31 @@
-import streamlit as st
-from alumnoApp import AlumnoApp 
+from alumnoApp import AlumnoApp
+from maestroApp import MaestroApp
+from grupoApp import GrupoApp
 
-class InstanciasAlumnosApp:
-    def __init__(self):
-        st.set_page_config(page_title="Gestor de Alumnos", layout="wide")
-        st.title("Gestor de Alumnos")
+def main():
+    while True:
+        print("==== Sistema de Gestión ====")
+        print("1) Módulo Alumnos")
+        print("2) Módulo Maestros")
+        print("3) Módulo Grupos")
+        print("4) Salir")
+        opcion = input().strip()
 
-        self.instancias_key = "instancias_alumnos"
-        if self.instancias_key not in st.session_state:
-            st.session_state[self.instancias_key] = {}
-
-    def render(self):
-        app_alumnos = AlumnoApp()
-        app_alumnos.instancias = st.session_state[self.instancias_key]
-        app_alumnos.render()
-        st.session_state[self.instancias_key] = app_alumnos.instancias
+        if opcion == "1":
+            # Instancia AlumnoApp sin argumentos -> cargará alumnos.json si existe
+            app = AlumnoApp()
+            app.correr()
+        elif opcion == "2":
+            app_m = MaestroApp()
+            app_m.correr()
+        elif opcion == "3":
+            app_g = GrupoApp()
+            app_g.correr()
+        elif opcion == "4":
+            print("Saliendo...")
+            break
+        else:
+            print("Opción inválida. Intenta de nuevo.")
 
 if __name__ == "__main__":
-    app = InstanciasAlumnosApp()
-    app.render()
+    main()

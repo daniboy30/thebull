@@ -1,136 +1,210 @@
 import os
-import streamlit as st
+import json
+from alumno import Alumno
+
+import os
+import json
 from alumno import Alumno
 
 class AlumnoApp:
-    def __init__(self):
-        self.instancias = {}
-        if os.path.exists("alumnos.json"):
-            alumnos = Alumno()
-            alumnos.leerJson("alumnos.json")
-            self.instancias["alumno"] = alumnos
-            st.info("json cargado correctamente")
+    def __init__(self, alumnos=None, alumnos_global=None):  # Ahora alumnos es opcional
+        self.json_loaded = False  # Bandera para controlar si se cargó JSON exitosamente
+        if alumnos is None:
+            self.alumnos = Alumno()
+            try:
+                self.alumnos.leerJson("alumnos.json")
+                print("Datos cargados desde 'alumnos.json'.")
+                self.json_loaded = True
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+        else:
+            self.alumnos = alumnos
+            self.alumnos_global = alumnos_global or alumnos
 
-    def formulario_alumno(self):
-        nombre = st.text_input("Nombre", key="nombre")
-        apellido = st.text_input("Apellido", key="apellido")
-        edad = st.number_input("Edad", key="edad")
-        matricula = st.text_input("Matrícula", key="matricula")
-        promedio = st.number_input("Promedio", key="promedio")
-        materias = st.text_area("Materias (separadas por comas)", key="materias", value="")
-        materias_lista = [m.strip() for m in materias.split(",") if m.strip()]
-        return Alumno(nombre, apellido, edad, matricula, promedio, materias_lista)
+    def correr(self):
+        while True:
+            print("==== Gestor de Alumnos ====")
+            print("1) Listar todos los alumnos")
+            print("2) Agregar un nuevo alumno")
+            print("3) Editar un alumno existente")
+            print("4) Eliminar un alumno")
+            print("5) Mostrar como diccionarios")
+            print("6) Salir")
+            opcion = input().strip()
 
-    def crear_instancia_vacia(self):
-        st.subheader("Formulario de Instancia de Alumnos")
-        with st.form("formulario_instancias"):
-            nombre = st.text_input("Nombre de la instancia")
-            crear_instancia = st.form_submit_button("Crear instancia")
-            if crear_instancia:
-                if nombre and nombre not in self.instancias:
-                    self.instancias[nombre] = Alumno()
-                    st.success(f"Instancia '{nombre}' creada.")
-                    st.rerun()
-                else:
-                    st.error("El nombre de la instancia ya existe")
+            if opcion == "1":
+                self.listar_alumnos()
+            elif opcion == "2":
+                self.agregar_alumno()
+            elif opcion == "3":
+                self.editar_alumno()
+            elif opcion == "4":
+                self.eliminar_alumno()
+            elif opcion == "5":
+                self.mostrar_como_diccionarios()
+            elif opcion == "6":
+                print("Saliendo...")
+                if self.json_loaded:
+                    self.guardar_datos()
+                break
+            else:
+                print("Opción no válida. Intenta de nuevo.")
 
-    def tarjetas_instancias(self):
-        st.subheader("Instancias de alumnos existentes")
-        if not self.instancias:
-            st.info("No hay instancias registradas.")
+    def listar_alumnos(self):
+        if not self.alumnos.items:
+            print("No hay alumnos registrados.")
+            return
+        print("=== LISTA DE ALUMNOS ===")
+        for al in self.alumnos.items:
+            materias_str = ", ".join(al.materias)
+            print(f"ID: {getattr(al, 'id')}")
+            print(f"Nombre: {al.nombre} {al.apellido}")
+            print(f"Edad: {al.edad}")
+            print(f"Matrícula: {al.matricula}")
+            print(f"Promedio: {al.promedio}")
+            print(f"Materias: {materias_str}")
+            print("-" * 40)
+
+    def agregar_alumno(self):
+        print("¿Qué tipo de alumno deseas agregar?")
+        print("1) Alumno nuevo")
+        print("2) Alumno ya registrado")
+        opcion = input("Selecciona una opción: ").strip()
+        if opcion == "2":
+            if not self.alumnos_global.items:
+                print("No hay alumnos registrados en el sistema.")
+                return
+            print("=== Alumnos registrados disponibles ===")
+            for a in self.alumnos_global.items:
+                print(f"ID: {a.id} | Matrícula: {a.matricula} | {a.nombre} {a.apellido}")
+            print("-" * 40)
+            busqueda = input("Ingresa ID o matrícula del alumno que deseas agregar: ").strip()
+            alumno_existente = next(
+                (a for a in self.alumnos_global.items if str(getattr(a, 'id', '')) == busqueda or a.matricula == busqueda),
+                None
+            ) #busco el alumno por ID o matrícula
+            if not alumno_existente:
+                print("ERROR: Alumno no encontrado.")
+                return
+
+            if any(a.matricula == alumno_existente.matricula for a in self.alumnos.items):
+                print("Este alumno ya fue agregado a este grupo.")
+                return
+
+            self.alumnos.agregar(alumno_existente)
+            print(f"Alumno {alumno_existente.nombre} {alumno_existente.apellido} agregado al grupo.")
             return
 
-        cols = st.columns(min(4, len(self.instancias)))
-        for i, (nombre, instancia) in enumerate(self.instancias.items()):
-            with cols[i % len(cols)]:
-                st.markdown(
-                    f"""
-                    <div style='
-                        display:flex;flex-direction:column;align-items:center;
-                        justify-content:center;width:256px;height:128px;
-                        background:#262730;color:#fff;border:2.5px solid #585858;
-                        border-radius:20px;text-align:center;'>
-                        <div style="font-size:1.15em;font-weight:600;">{nombre}</div>
-                        <div style="font-size:.93em;opacity:0.8;">Alumnos: <b>{len(instancia.items)}</b></div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-                if st.button("Mostrar alumnos", key=f"mostrar_{nombre}"):
-                    st.session_state["instancia_mostrando"] = nombre
-
-    def tabla_alumnos(self, instancia):
-        st.subheader("Alumnos registrados")
-        alumnos = instancia.items
-        if not alumnos:
-            st.info("No hay alumnos en esta instancia.")
+        elif opcion != "1":
+            print("Opción no válida.")
             return
 
-        for idx, al in enumerate(alumnos):
-            with st.expander(f"{al.nombre} {al.apellido} (Matrícula: {al.matricula})", expanded=True):
-                nuevo_nombre = st.text_input("Nombre", al.nombre, key=f"edit_nombre_{al.matricula}")
-                nuevo_apellido = st.text_input("Apellido", al.apellido, key=f"edit_apellido_{al.matricula}")
-                nueva_edad = st.number_input("Edad", 0, 120, al.edad, value=int(al.edad), key=f"edit_edad_{al.matricula}")
-                nueva_matricula = st.text_input("Matrícula", value=al.matricula, key=f"edit_matricula_{al.matricula}")
-                nuevo_promedio = st.number_input("Promedio", 0.0, 10.0, al.promedio, step=0.1, key=f"edit_prom_{al.matricula}")
-                materias_default = ", ".join(al.materias)
-                nuevas_materias = st.text_area("Materias (separadas por coma)", value=materias_default, key=f"edit_materias_{al.matricula}")
-                materias = [m.strip() for m in nuevas_materias.split(",") if m.strip()]
-                col1, col2 = st.columns(2)
-                if col1.button("Guardar", key=f"save_{al.matricula}"):
-                    matriculas_existentes = [a.matricula for i, a in enumerate(alumnos) if i != idx]
-                    if nueva_matricula in matriculas_existentes:
-                        st.error("La matrícula ya existe.")
-                    else:
-                        al.nombre = nuevo_nombre
-                        al.apellido = nuevo_apellido
-                        al.edad = nueva_edad
-                        al.matricula = nueva_matricula
-                        al.promedio = nuevo_promedio
-                        al.materias = materias
-                        st.success("Alumno actualizado.")
-                        st.rerun()
+        # Flujo original: alumno nuevo
+        print("Agregar Nuevo Alumno")
+        nombre = input("Nombre: ").strip()
+        apellido = input("Apellido: ").strip()
+        try:
+            edad = int(input("Edad: ").strip())
+        except ValueError:
+            print("ERROR: Edad inválida.")
+            return
+        matricula = input("Matrícula: ").strip()
+        try:
+            promedio = float(input("Promedio (0 - 10): ").strip())
+        except ValueError:
+            print("ERROR: Promedio inválido.")
+            return
+        materias = [m.strip() for m in input("Materias (separadas por coma): ").split(",") if m.strip()]
 
-                if col2.button("Eliminar", key=f"del_{al.matricula}"):
-                    instancia.eliminar(al.matricula)
-                    st.warning("Alumno eliminado.")
-                    st.rerun()
+        if not nombre or not apellido or not matricula:
+            print("ERROR: Nombre, Apellido y Matrícula son obligatorios.")
+            return
+        if any(a.matricula == matricula for a in self.alumnos.items):
+            print("ERROR: Ya existe un alumno con esa matrícula en este grupo.")
+            return
 
-    def agregar(self, instancia):
-        st.subheader("Agregar nuevo alumno")
-        with st.form("agregar_alumno"):
-            nuevo_alumno = self.formulario_alumno()
-            agregar = st.form_submit_button("Agregar alumno")
-            if agregar:
-                matriculas_existentes = [al.matricula for al in instancia.items]
-                if nuevo_alumno.matricula in matriculas_existentes:
-                    st.error("La matrícula ya existe en esta instancia.")
-                else:
-                    instancia.agregar(nuevo_alumno)
-                    st.success("Alumno agregado correctamente")
-                    st.rerun()
+        next_id = self._obtener_id()
+        nuevo = Alumno(nombre, apellido, edad, matricula, promedio, materias)
+        setattr(nuevo, 'id', next_id)
+        self.alumnos.agregar(nuevo)
+        print(f"Alumno nuevo agregado con ID {next_id}.")
 
-    def opciones(self, instancia, instancia_actual):
-        if st.button("Guardar instancia como JSON", key=f"guardar_{instancia_actual}"):
-            instancia.crearJson("instancia_alumnos.json")
-            st.success(f"Instancia '{instancia_actual}' guardada.")
+        if self.json_loaded:
+            self.guardar_datos()
+        else:
+            print("Aviso: No se cargó JSON previamente. Los cambios no se guardarán.")
 
-        if st.button("Mostrar como diccionario", key=f"dict_{instancia_actual}_alumno"):
-            st.json(instancia.convADiccionarios())
 
-        if st.button("Ocultar alumnos"):
-            st.session_state["instancia_mostrando"] = None
+    def _obtener_id(self):
+        if not self.alumnos.items:
+            return 1
+        ids = [] #lista vacia para guardar mis ids
+        for a in self.alumnos.items: # Recorro mi arreglo de alumnos
+            try:
+                ids.append(int(getattr(a, 'id', 0))) # guardo mi id entero en mi lista de ids
+            except (ValueError, TypeError):
+                ids.append(0)
+        return max(ids) + 1 #al maximo id le sumo 1 para que sea el siguiente id disponible
 
-    def render(self):
-        self.crear_instancia_vacia()
-        st.markdown("---")
-        self.tarjetas_instancias()
+    def editar_alumno(self):
+        if not self.alumnos.items:
+            print("No hay alumnos para editar.")
+            return
+        self.listar_alumnos()
+        id_buscar = input("Ingrese ID del alumno a editar: ").strip()
+        alumno = next((a for a in self.alumnos.items if str(getattr(a, 'id', '')) == id_buscar), None)
+        if not alumno:
+            print("ERROR: Alumno no encontrado.")
+            return
+        print("--- Editar Alumno (si no quieres cambiarlo solo da espacio---")
+        nuevo_nombre = input(f"Nombre [{alumno.nombre}]: ").strip() or alumno.nombre
+        nuevo_apellido = input(f"Apellido [{alumno.apellido}]: ").strip() or alumno.apellido
+        edad_nueva = input(f"Edad [{alumno.edad}]: ").strip()
+        if edad_nueva:
+            try:
+                alumno.edad = int(edad_nueva)
+            except ValueError:
+                print("ERROR: Edad inválida. Se mantiene el valor anterior.")
+        matricula_nueva = input(f"Matrícula [{alumno.matricula}]: ").strip() or alumno.matricula
+        if matricula_nueva != alumno.matricula and any(a.matricula == matricula_nueva for a in self.alumnos.items if a is not alumno):
+            print("ERROR: Matrícula duplicada. Se conserva la anterior.")
+        else:
+            alumno.matricula = matricula_nueva
+        promedio_nuevo = input(f"Promedio [{alumno.promedio}]: ").strip()
+        if promedio_nuevo:
+            try:
+                alumno.promedio = float(promedio_nuevo)
+            except ValueError:
+                print("ERROR: Promedio inválido. Se conserva el anterior.")
+        materias_nuevas = input(f"Materias [{', '.join(alumno.materias)}]: ").strip()
+        if materias_nuevas:
+            alumno.materias = [m.strip() for m in materias_nuevas.split(",") if m.strip()]
+        alumno.nombre = nuevo_nombre
+        alumno.apellido = nuevo_apellido
+        print("OK: Alumno actualizado.")
+        if self.json_loaded:
+            self.guardar_datos()
 
-        instancia_actual = st.session_state.get("instancia_mostrando")
-        if instancia_actual:
-            st.markdown("---")
-            st.subheader(f"Instancia activa: {instancia_actual}")
-            instancia = self.instancias[instancia_actual]
-            self.tabla_alumnos(instancia)
-            self.agregar(instancia)
-            self.opciones(instancia, instancia_actual)
+    def eliminar_alumno(self):
+        if not self.alumnos.items:
+            print("No hay alumnos para eliminar.")
+            return
+        self.listar_alumnos()
+        id_eliminar = input("Ingrese ID del alumno a eliminar: ").strip()
+        if self.alumnos.eliminar(id_eliminar):
+            print("OK: Alumno eliminado.")
+            if self.json_loaded:
+                self.guardar_datos()
+        else:
+            print("ERROR: No se pudo eliminar el alumno.")
+
+    def guardar_datos(self):
+        try:
+            self.alumnos.crearJson("alumnos.json")
+        except Exception as e:
+            print(f"ERROR al guardar datos: {e}")
+
+    def mostrar_como_diccionarios(self):
+        lista = self.alumnos.convADiccionarios()
+        print(json.dumps(lista, indent=2, ensure_ascii=False))
+

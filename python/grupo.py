@@ -2,38 +2,48 @@ import json
 from alumno import Alumno
 from maestro import Maestro
 from arreglo import Arreglo
-from pprint import pprint
 
 class Grupo(Arreglo):
     _id_counter = 1
 
-    def __init__(self, nombre: str = None, ciclo_escolar: str = None, salon: str = None, maestro: Maestro = None):
-        if nombre is None and ciclo_escolar is None and salon is None and maestro is None:
+    def __init__(self,
+                 nombre: str = None,
+                 ciclo_escolar: str = None,
+                 salon: str = None,
+                 maestro: Maestro = None,
+                 alumnos: list = None):
+        """
+        Constructor dual:
+        - Sin parámetros: crea un contenedor vacío de grupos (es_arreglo=True).
+        - Con datos: crea un grupo individual, asignando maestro y lista de alumnos opcional.
+        """
+        # Caso contenedor
+        if nombre is None and ciclo_escolar is None and salon is None and maestro is None and alumnos is None:
             super().__init__()
             self.es_arreglo = True
-        else:
-            self.id = Grupo._id_counter
-            Grupo._id_counter += 1
-            self.nombre = nombre
-            self.ciclo_escolar = ciclo_escolar
-            self.salon = salon
-            self.maestro = maestro
-            self.alumnos = Alumno()
-            self.es_
-            self.es_arreglo = False
+            return
+
+        # Caso grupo individual
+        self.id = Grupo._id_counter
+        Grupo._id_counter += 1
+        self.nombre = nombre
+        self.ciclo_escolar = ciclo_escolar
+        self.salon = salon
+        self.maestro = maestro
+        # Inicializa contenedor de alumnos
+        self.alumnos = Alumno()
+        # Agrega lista inicial si se proporciona
+        if alumnos:
+            for a in alumnos:
+                self.alumnos.agregar(a)
+        self.es_arreglo = False
 
     def convADiccionario(self):
         if self.es_arreglo:
             return self.convADiccionarios()
 
-        alumnos_list = []
-        if hasattr(self.alumnos, 'items'):
-            for a in self.alumnos.items:
-                alumnos_list.append(a.convADiccionario())
-
-        maestro_dict = None
-        if self.maestro:
-            maestro_dict = self.maestro.convADiccionario()
+        alumnos_list = [a.convADiccionario() for a in self.alumnos.items]
+        maestro_dict = self.maestro.convADiccionario() if self.maestro else None
 
         return {
             "id": self.id,
@@ -56,64 +66,60 @@ class Grupo(Arreglo):
             f"Alumnos: {len(self.alumnos.items)}"
         )
 
-    """def leerJson(self, nombre_archivo):
-        with open(nombre_archivo, 'r', encoding='utf-8') as archivo:
-            return json.load(archivo)"""
-
-
     def es_grupo(self, dic):
         campos = {"id", "nombre", "ciclo_escolar", "salon", "maestro", "alumnos"}
         return campos.issubset(dic.keys())
 
     def instanciarDesdeJson(self, datos):
+        # Aplanar listas anidadas
         if isinstance(datos, list):
+            flat = []
+            for elem in datos:
+                if isinstance(elem, list):
+                    flat.extend(elem)
+                else:
+                    flat.append(elem)
+            datos = flat
+
             for d in datos:
-                grupo = Grupo()  
+                if not isinstance(d, dict):
+                    continue
+                grupo = Grupo()
                 grupo.id = d.get("id", 0)
                 grupo.nombre = d.get("nombre")
                 grupo.ciclo_escolar = d.get("ciclo_escolar")
                 grupo.salon = d.get("salon")
-                    
-                if "maestro" in d and d["maestro"]:
-                    grupo.maestro = Maestro(**d["maestro"])
-                else:
-                    grupo.maestro = None
 
+                # Maestro
+                grupo.maestro = Maestro(**d["maestro"]) if d.get("maestro") else None
+
+                # Alumnos
                 grupo.alumnos = Alumno()
-                if "alumnos" in d and d["alumnos"]:
+                if d.get("alumnos"):
                     grupo.alumnos.instanciarDesdeJson(d["alumnos"])
-                    """
-                    for alumno_dict in d["alumnos"]:
-                        alumno_data = alumno_dict.copy()
-                        alumno_data.pop('id', None)
-                        alumno = Alumno(**alumno_data)
-                        grupo.alumnos.agregar(alumno)
-                    """
+
                 self.agregar(grupo)
             return True
-        elif isinstance(datos, dict):
+
+        # Caso único dict
+        if isinstance(datos, dict):
             self.id = datos.get("id", 0)
             self.nombre = datos.get("nombre")
             self.ciclo_escolar = datos.get("ciclo_escolar")
             self.salon = datos.get("salon")
 
-            
-            if "maestro" in datos and datos["maestro"]:
-                self.maestro = Maestro(**datos["maestro"])
-            else:
-                self.maestro = None
+            self.maestro = Maestro(**datos["maestro"]) if datos.get("maestro") else None
 
-            
             self.alumnos = Alumno()
-            if "alumnos" in datos and datos["alumnos"]:
+            if datos.get("alumnos"):
                 for alumno_dict in datos["alumnos"]:
                     alumno = Alumno(**alumno_dict)
                     self.alumnos.agregar(alumno)
             return True
+
         return False
 
-
 if __name__ == "__main__":
-    grupos_desde_json = Grupo()
-    grupos_desde_json.leerJson('grupos.json')
-    grupos_desde_json.mostrar_diccionario()
+    grupos = Grupo()
+    grupos.leerJson('grupos.json')
+    grupos.mostrar_diccionario()

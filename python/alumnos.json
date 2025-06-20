@@ -1,0 +1,74 @@
+[
+    {
+        "id": "1",
+        "nombre": "saul",
+        "apellido": "sanchez",
+        "edad": 21,
+        "matricula": "1",
+        "promedio": 8.0,
+        "materias": [
+            "info",
+            "mate"
+        ]
+    },
+    {
+        "id": "2",
+        "nombre": "daniel",
+        "apellido": "garcia",
+        "edad": 18,
+        "matricula": "2",
+        "promedio": 9.0,
+        "materias": [
+            "info",
+            "mate"
+        ]
+    },
+    {
+        "id": "3",
+        "nombre": "aza",
+        "apellido": "her",
+        "edad": 18,
+        "matricula": "3",
+        "promedio": 6.0,
+        "materias": [
+            "info",
+            "mate"
+        ]
+    },
+    {
+        "id": "4",
+        "nombre": "beto",
+        "apellido": "get",
+        "edad": 17,
+        "matricula": "4",
+        "promedio": 7.0,
+        "materias": [
+            "info",
+            "mate"
+        ]
+    },
+    {
+        "id": "6",
+        "nombre": "gael",
+        "apellido": "vazques",
+        "edad": 21,
+        "matricula": "6",
+        "promedio": 7.0,
+        "materias": [
+            "info",
+            "mate"
+        ]
+    },
+    {
+        "id": 7,
+        "nombre": "adolfo",
+        "apellido": "garcia",
+        "edad": 12,
+        "matricula": "889",
+        "promedio": 6.0,
+        "materias": [
+            "info",
+            "mate"
+        ]
+    }
+]
